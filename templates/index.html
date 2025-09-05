@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Medical Image Analysis Bot - Google AI Studio</title>
+    <title>MedClick</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; line-height: 1.6; }
@@ -74,7 +74,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🏥 Medi Click</h1>
+            <h1>🏥 MediClick</h1>
             <p>Advanced AI-Powered Medical Image Analysis</p>
         </div>
         <div class="main-content">
@@ -100,20 +100,17 @@
             <div class="results-section" id="resultsSection">
                 <div class="loading" id="loadingDiv">
                     <div class="spinner"></div>
-                    <h3>🧠 AI Analysis in Progress...</h3>
-                    <p>Google AI is carefully analyzing your medical image with advanced diagnostic algorithms.</p>
+                    <h3> AI Analysis in Progress...</h3>
+                    <p>Medi AI is carefully analyzing your medical image with advanced diagnostic algorithms.</p>
                 </div>
                 <div id="resultsDiv" style="display: none;"></div>
                 <div id="welcomeMessage">
                     <div style="text-align: center; padding: 50px 20px; color: #666;">
                         <div style="font-size: 4em; margin-bottom: 20px;">🩺</div>
-                        <h2 style="color: #4facfe; margin-bottom: 15px;">Welcome to Medical Image Analysis</h2>
+                        <h2 style="color: #4facfe; margin-bottom: 15px;">Welcome to MediClick Image Analysis</h2>
                         <p style="font-size: 1.1em; line-height: 1.6;">Upload a medical image and describe your symptoms to get an AI-powered analysis. Our system provides comprehensive medical assessments including visual observations, potential diagnoses, severity evaluation, and professional recommendations.</p>
                         <div class="info-badges" style="justify-content: center; margin-top: 25px;">
-                            <div class="badge">🎯 Accurate Analysis</div>
-                            <div class="badge">⚡ Fast Results</div>
-                            <div class="badge">💰 Completely Free</div>
-                            <div class="badge">🔒 Secure & Private</div>
+                            <div class="badge">Accurate Analysis</div>
                         </div>
                     </div>
                 </div>
@@ -186,12 +183,11 @@
             if (file.size > 10 * 1024 * 1024) { showError('Image file must be smaller than 10MB'); return; }
 
             selectedFile = file;
-            // Show preview
             const reader = new FileReader();
             reader.onload = (ev) => {
                 previewImage.src = ev.target.result;
                 previewImage.style.display = 'block';
-                // Update visual state WITHOUT replacing DOM (keeps input & listeners)
+
                 uploadIcon.textContent = '✅';
                 uploadHeading.textContent = 'Image Ready for Analysis!';
                 fileDetails.textContent = `${file.name} • ${(file.size / 1024 / 1024).toFixed(2)}MB`;
@@ -209,7 +205,7 @@
             resultsDiv.style.display = 'none';
             loadingDiv.style.display = 'block';
             analyzeBtn.disabled = true;
-            analyzeBtn.textContent = '🔄 Analyzing...';
+            analyzeBtn.textContent = 'Analyzing...';
 
             try {
                 const formData = new FormData();
@@ -227,7 +223,7 @@
                 isAnalyzing = false;
                 loadingDiv.style.display = 'none';
                 analyzeBtn.disabled = false;
-                analyzeBtn.textContent = '🔬 Analyze Medical Image';
+                analyzeBtn.textContent = 'Analyze Medical Image';
             }
         }
 
@@ -238,7 +234,7 @@
             if (data.success) {
                 const resultCard = document.createElement('div');
                 resultCard.className = 'result-card';
-                const provider = data.model_info && (data.model_info.provider || 'Google AI Studio');
+                const provider = data.model_info && (data.model_info.provider || 'Medi AI');
                 const name = data.model_info && (data.model_info.name || 'Model');
                 const cost = data.model_info && (data.model_info.cost || '');
                 const subtitle = cost ? `${provider} • ${cost}` : provider;
@@ -255,22 +251,10 @@
                 `;
                 resultsDiv.appendChild(resultCard);
 
-                const disclaimer = document.createElement('div');
-                disclaimer.className = 'medical-disclaimer';
-                disclaimer.innerHTML = `
-                    <h4>Critical Medical Disclaimer</h4>
-                    <p><strong>This AI analysis is for informational and educational purposes only.</strong></p>
-                    <p>• This is NOT a substitute for professional medical diagnosis or treatment</p>
-                    <p>• Always consult qualified healthcare professionals for proper medical evaluation</p>
-                    <p>• Seek immediate emergency medical care if symptoms are severe or worsening</p>
-                    <p>• This AI cannot replace physical examination, medical history, or clinical judgment</p>
-                    <p>• Do not delay professional medical care based solely on this analysis</p>
-                `;
-                resultsDiv.appendChild(disclaimer);
             } else {
                 const errorCard = document.createElement('div');
                 errorCard.className = 'error-card';
-                const provider = data.model_info ? (data.model_info.provider || 'Google AI Studio') : 'Google AI Studio';
+                const provider = data.model_info ? (data.model_info.provider || 'Medi Ai') : 'Medi Ai';
                 let suggestionsHTML = '';
                 if (data.error && Array.isArray(data.error.suggestions) && data.error.suggestions.length > 0) {
                     suggestionsHTML = `
@@ -304,25 +288,22 @@
             if (!text) return '<p>No analysis content available.</p>';
             let formatted = String(text).trim();
 
-            // Convert markdown-style headers (process h3 BEFORE h2 to avoid partial matches)
             formatted = formatted.replace(/^###\s+(.*)$/gm, '<h3>$1</h3>');
             formatted = formatted.replace(/^##\s+(.*)$/gm, '<h2>$1</h2>');
 
-            // Bold & italics
             formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
             formatted = formatted.replace(/\*([^*]+)\*/g, '<em>$1</em>');
 
-            // Severity blocks
             formatted = formatted.replace(/(EMERGENCY:.*?)(?=\n|$)/gi, '<div class="severity-emergency">🚨 $1</div>');
             formatted = formatted.replace(/(URGENT:.*?)(?=\n|$)/gi, '<div class="severity-urgent">⚠️ $1</div>');
             formatted = formatted.replace(/(ROUTINE:.*?)(?=\n|$)/gi, '<div class="severity-routine">✅ $1</div>');
 
-            // Bullets to <li>
+
             formatted = formatted.replace(/^\-\s+(.*)$/gm, '<li>$1</li>');
-            // Wrap consecutive <li> blocks in a single <ul>
+
             formatted = formatted.replace(/(?:<li>[\s\S]*?<\/li>\s*)+/g, (m) => `<ul>${m}</ul>`);
 
-            // Convert remaining double line breaks into paragraphs, but keep existing blocks
+
             const parts = formatted.split(/\n\n+/);
             let result = '';
             for (let paragraph of parts) {
@@ -372,7 +353,6 @@
             if (!selectedFile) welcomeMessage.style.display = 'block';
         }
 
-        // Health check on page load
         window.addEventListener('load', async () => {
             try {
                 const response = await fetch('/health');
@@ -392,7 +372,6 @@
             }
         });
 
-        // Add sample query suggestions
         const sampleQueries = [
             'What medical condition does this image show?',
             'Please analyze this skin condition and provide recommendations.',
