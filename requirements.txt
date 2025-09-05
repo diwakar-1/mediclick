@@ -1,0 +1,14 @@
+# Requirements for Medical Bot with Google AI Studio (FREE)
+
+# Core FastAPI dependencies
+fastapi
+uvicorn
+python-multipart
+python-dotenv
+Jinja2
+
+# Image processing
+Pillow
+
+# Google AI Studio SDK (FREE API)
+google-generativeai

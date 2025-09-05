@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medical Image Analysis Bot - Google AI Studio</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; line-height: 1.6; }
+        .container { max-width: 1400px; margin: 0 auto; background: white; border-radius: 25px; box-shadow: 0 25px 50px rgba(0,0,0,0.15); overflow: hidden; }
+        .header { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 40px; text-align: center; }
+        .header h1 { font-size: 3em; margin-bottom: 15px; font-weight: 700; }
+        .header p { font-size: 1.2em; opacity: 0.95; margin-bottom: 10px; }
+        .status-badge { display: inline-block; background: rgba(255,255,255,0.2); padding: 8px 20px; border-radius: 20px; font-size: 0.9em; margin-top: 10px; }
+        .main-content { display: grid; grid-template-columns: 1fr 1fr; gap: 0; min-height: 600px; }
+        .upload-section { padding: 50px; background: #f8f9fa; display: flex; flex-direction: column; justify-content: center; }
+        .results-section { padding: 50px; background: white; overflow-y: auto; max-height: 800px; }
+        .upload-area { border: 3px dashed #4facfe; border-radius: 20px; padding: 50px; margin-bottom: 30px; text-align: center; transition: all 0.3s ease; cursor: pointer; background: white; position: relative; }
+        .upload-area:hover { border-color: #00f2fe; background: rgba(79, 172, 254, 0.05); transform: translateY(-2px); }
+        .upload-area.dragover { border-color: #00f2fe; background: rgba(79, 172, 254, 0.1); transform: scale(1.02); }
+        .upload-icon { font-size: 5em; color: #4facfe; margin-bottom: 20px; }
+        .upload-text { color: #333; margin-bottom: 10px; }
+        .upload-text h3 { font-size: 1.5em; margin-bottom: 10px; }
+        .file-input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+        .upload-btn { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; border: none; padding: 15px 35px; border-radius: 30px; font-size: 1.1em; font-weight: 600; cursor: pointer; transition: all 0.3s ease; margin-top: 20px; }
+        .upload-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(79, 172, 254, 0.3); }
+        .query-input { width: 100%; padding: 20px; border: 2px solid #e0e0e0; border-radius: 15px; font-size: 1.1em; margin-bottom: 25px; resize: vertical; min-height: 120px; font-family: inherit; background: white; }
+        .query-input:focus { outline: none; border-color: #4facfe; box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1); }
+        .analyze-btn { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 18px 45px; border-radius: 30px; font-size: 1.3em; font-weight: 600; cursor: pointer; transition: all 0.3s ease; width: 100%; }
+        .analyze-btn:hover:not(:disabled) { transform: translateY(-3px); box-shadow: 0 15px 35px rgba(102, 126, 234, 0.4); }
+        .analyze-btn:disabled { background: #ccc; cursor: not-allowed; transform: none; box-shadow: none; }
+        .preview-image { max-width: 100%; max-height: 300px; border-radius: 15px; margin: 25px 0; box-shadow: 0 10px 30px rgba(0,0,0,0.2); display: block; }
+        .loading { text-align: center; padding: 50px; display: none; }
+        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #4facfe; border-radius: 50%; width: 60px; height: 60px; animation: spin 1s linear infinite; margin: 0 auto 30px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .loading h3 { color: #4facfe; font-size: 1.5em; margin-bottom: 15px; }
+        .loading p { color: #666; font-size: 1.1em; }
+        .result-card { background: #f8f9fa; border-radius: 20px; padding: 30px; margin-bottom: 25px; border-left: 5px solid #4facfe; }
+        .result-header { display: flex; align-items: center; margin-bottom: 25px; padding-bottom: 20px; border-bottom: 2px solid #e0e0e0; }
+        .result-icon { width: 60px; height: 60px; border-radius: 15px; display: flex; align-items: center; justify-content: center; margin-right: 20px; font-size: 2em; }
+        .success-icon { background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%); color: #155724; }
+        .error-icon { background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%); color: #721c24; }
+        .result-title { font-size: 1.6em; font-weight: 700; color: #2c3e50; margin-bottom: 5px; }
+        .result-subtitle { color: #666; font-size: 1em; }
+        .result-content { color: #333; font-size: 1.1em; line-height: 1.8; }
+        .result-content h2 { color: #2c3e50; font-size: 1.4em; margin: 30px 0 15px 0; padding-bottom: 10px; border-bottom: 2px solid #4facfe; font-weight: 600; }
+        .result-content h3 { color: #34495e; font-size: 1.2em; margin: 25px 0 10px 0; font-weight: 600; }
+        .result-content p { margin-bottom: 15px; }
+        .result-content ul, .result-content ol { margin: 15px 0; padding-left: 25px; }
+        .result-content li { margin-bottom: 8px; }
+        .result-content strong { color: #2c3e50; font-weight: 600; }
+        .medical-disclaimer { background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%); border: 3px solid #ffc107; border-radius: 20px; padding: 30px; margin: 30px 0; }
+        .medical-disclaimer h4 { color: #856404; font-size: 1.4em; margin-bottom: 20px; display: flex; align-items: center; font-weight: 700; }
+        .medical-disclaimer h4:before { content: "⚠️"; margin-right: 15px; font-size: 1.8em; }
+        .medical-disclaimer p { color: #856404; margin-bottom: 12px; font-weight: 500; font-size: 1em; }
+        .error-card { background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%); border: 3px solid #dc3545; border-radius: 20px; padding: 30px; color: #721c24; }
+        .error-suggestions { margin-top: 20px; }
+        .error-suggestions h4 { margin-bottom: 15px; font-weight: 600; }
+        .error-suggestions ul { padding-left: 20px; }
+        .error-suggestions li { margin-bottom: 8px; }
+        .info-badges { display: flex; gap: 15px; margin-top: 20px; flex-wrap: wrap; }
+        .badge { background: rgba(79, 172, 254, 0.1); color: #4facfe; padding: 8px 16px; border-radius: 20px; font-size: 0.9em; font-weight: 500; }
+        @media (max-width: 1024px) { .main-content { grid-template-columns: 1fr; } .results-section { max-height: none; } }
+        @media (max-width: 768px) { .container { margin: 10px; border-radius: 20px; } .header h1 { font-size: 2.2em; } .upload-section, .results-section { padding: 30px 20px; } .result-header { flex-direction: column; text-align: center; } .result-icon { margin: 0 0 15px 0; } }
+        .formatted-text h2::before { content: "📋"; margin-right: 10px; }
+        .formatted-text h3::before { content: "•"; color: #4facfe; margin-right: 8px; font-weight: bold; }
+        .severity-emergency { background: #f8d7da; border-left: 4px solid #dc3545; padding: 15px; border-radius: 8px; margin: 15px 0; }
+        .severity-urgent { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; border-radius: 8px; margin: 15px 0; }
+        .severity-routine { background: #d4edda; border-left: 4px solid #28a745; padding: 15px; border-radius: 8px; margin: 15px 0; }
+        /* helper for file details */
+        #fileDetails { color: #555; font-size: 0.95em; margin-top: 8px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏥 Medi Click</h1>
+            <p>Advanced AI-Powered Medical Image Analysis</p>
+        </div>
+        <div class="main-content">
+            <div class="upload-section">
+                <form id="analysisForm" enctype="multipart/form-data">
+                    <div class="upload-area" id="uploadArea">
+                        <div class="upload-icon" id="uploadIcon">📷</div>
+                        <div class="upload-text">
+                            <h3 id="uploadHeading">Upload Medical Image</h3>
+                            <p>Drag & drop your medical image here or click to browse</p>
+                            <p style="color: #888; font-size: 0.9em; margin-top: 10px;">Supported: JPG, PNG, GIF • Max: 10MB</p>
+                            <p id="fileDetails" aria-live="polite"></p>
+                            <button type="button" class="upload-btn" id="chooseBtn">📎 Choose Image</button>
+                        </div>
+                        <!-- IMPORTANT: keep input in DOM; don't replace/remove it -->
+                        <input type="file" id="imageFile" name="image" class="file-input" accept="image/*" aria-label="Choose medical image">
+                    </div>
+                    <img id="previewImage" class="preview-image" style="display: none;" alt="Selected image preview">
+                    <textarea id="queryText" name="query" class="query-input" placeholder="Describe your symptoms or ask about the medical condition. For example: 'What skin condition is this?', 'Please analyze this X-ray', or 'What medical problems do you see in this image?'" required></textarea>
+                    <button type="submit" class="analyze-btn" id="analyzeBtn">🔬 Analyze Medical Image</button>
+                </form>
+            </div>
+            <div class="results-section" id="resultsSection">
+                <div class="loading" id="loadingDiv">
+                    <div class="spinner"></div>
+                    <h3>🧠 AI Analysis in Progress...</h3>
+                    <p>Google AI is carefully analyzing your medical image with advanced diagnostic algorithms.</p>
+                </div>
+                <div id="resultsDiv" style="display: none;"></div>
+                <div id="welcomeMessage">
+                    <div style="text-align: center; padding: 50px 20px; color: #666;">
+                        <div style="font-size: 4em; margin-bottom: 20px;">🩺</div>
+                        <h2 style="color: #4facfe; margin-bottom: 15px;">Welcome to Medical Image Analysis</h2>
+                        <p style="font-size: 1.1em; line-height: 1.6;">Upload a medical image and describe your symptoms to get an AI-powered analysis. Our system provides comprehensive medical assessments including visual observations, potential diagnoses, severity evaluation, and professional recommendations.</p>
+                        <div class="info-badges" style="justify-content: center; margin-top: 25px;">
+                            <div class="badge">🎯 Accurate Analysis</div>
+                            <div class="badge">⚡ Fast Results</div>
+                            <div class="badge">💰 Completely Free</div>
+                            <div class="badge">🔒 Secure & Private</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedFile = null;
+        let isAnalyzing = false;
+
+        // DOM elements
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('imageFile');
+        const chooseBtn = document.getElementById('chooseBtn');
+        const uploadIcon = document.getElementById('uploadIcon');
+        const uploadHeading = document.getElementById('uploadHeading');
+        const fileDetails = document.getElementById('fileDetails');
+        const previewImage = document.getElementById('previewImage');
+        const analysisForm = document.getElementById('analysisForm');
+        const loadingDiv = document.getElementById('loadingDiv');
+        const resultsDiv = document.getElementById('resultsDiv');
+        const welcomeMessage = document.getElementById('welcomeMessage');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const queryText = document.getElementById('queryText');
+
+        // Make entire area clickable while keeping input in DOM
+        chooseBtn.addEventListener('click', () => fileInput.click());
+        uploadArea.addEventListener('click', (e) => {
+            const isInteractive = e.target === fileInput || e.target === chooseBtn;
+            if (!isInteractive) fileInput.click();
+        });
+
+        // File upload event listeners
+        fileInput.addEventListener('change', handleFileSelect);
+
+        // Drag and drop functionality
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        uploadArea.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+        });
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0 && files[0].type.startsWith('image/')) {
+                fileInput.files = files; // will trigger change event in some browsers; ensure call
+                handleFileSelect({ target: { files } });
+            }
+        });
+
+        // Form submission
+        analysisForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (isAnalyzing) return;
+            if (!selectedFile) { showError('Please select a medical image to analyze'); return; }
+            const query = queryText.value.trim();
+            if (!query) { showError('Please describe your symptoms or ask a specific question about the image'); return; }
+            await performAnalysis();
+        });
+
+        function handleFileSelect(e) {
+            const file = e.target.files && e.target.files[0];
+            if (!file) return;
+            if (!file.type.startsWith('image/')) { showError('Please select a valid image file (JPG, PNG, or GIF)'); return; }
+            if (file.size > 10 * 1024 * 1024) { showError('Image file must be smaller than 10MB'); return; }
+
+            selectedFile = file;
+            // Show preview
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                previewImage.src = ev.target.result;
+                previewImage.style.display = 'block';
+                // Update visual state WITHOUT replacing DOM (keeps input & listeners)
+                uploadIcon.textContent = '✅';
+                uploadHeading.textContent = 'Image Ready for Analysis!';
+                fileDetails.textContent = `${file.name} • ${(file.size / 1024 / 1024).toFixed(2)}MB`;
+            };
+            reader.readAsDataURL(file);
+
+            clearResults();
+        }
+
+        async function performAnalysis() {
+            if (isAnalyzing) return;
+            isAnalyzing = true;
+            // Show loading state
+            welcomeMessage.style.display = 'none';
+            resultsDiv.style.display = 'none';
+            loadingDiv.style.display = 'block';
+            analyzeBtn.disabled = true;
+            analyzeBtn.textContent = '🔄 Analyzing...';
+
+            try {
+                const formData = new FormData();
+                formData.append('image', selectedFile);
+                formData.append('query', queryText.value.trim());
+
+                const response = await fetch('/upload_and_query', { method: 'POST', body: formData });
+                if (!response.ok) throw new Error(`Server error: ${response.status} ${response.statusText}`);
+                const result = await response.json();
+                displayResults(result);
+            } catch (error) {
+                console.error('Analysis error:', error);
+                showError(`Failed to analyze image: ${error.message}. Please check your connection and try again.`);
+            } finally {
+                isAnalyzing = false;
+                loadingDiv.style.display = 'none';
+                analyzeBtn.disabled = false;
+                analyzeBtn.textContent = '🔬 Analyze Medical Image';
+            }
+        }
+
+        function displayResults(data) {
+            if (!data) { showError('No response received from the server'); return; }
+            resultsDiv.innerHTML = '';
+
+            if (data.success) {
+                const resultCard = document.createElement('div');
+                resultCard.className = 'result-card';
+                const provider = data.model_info && (data.model_info.provider || 'Google AI Studio');
+                const name = data.model_info && (data.model_info.name || 'Model');
+                const cost = data.model_info && (data.model_info.cost || '');
+                const subtitle = cost ? `${provider} • ${cost}` : provider;
+
+                resultCard.innerHTML = `
+                    <div class="result-header">
+                        <div class="result-icon success-icon">🎯</div>
+                        <div>
+                            <div class="result-title">${escapeHtml(name)}</div>
+                            <div class="result-subtitle">${escapeHtml(subtitle)}</div>
+                        </div>
+                    </div>
+                    <div class="result-content formatted-text">${formatAnalysisText(data.analysis && data.analysis.content)}</div>
+                `;
+                resultsDiv.appendChild(resultCard);
+
+                const disclaimer = document.createElement('div');
+                disclaimer.className = 'medical-disclaimer';
+                disclaimer.innerHTML = `
+                    <h4>Critical Medical Disclaimer</h4>
+                    <p><strong>This AI analysis is for informational and educational purposes only.</strong></p>
+                    <p>• This is NOT a substitute for professional medical diagnosis or treatment</p>
+                    <p>• Always consult qualified healthcare professionals for proper medical evaluation</p>
+                    <p>• Seek immediate emergency medical care if symptoms are severe or worsening</p>
+                    <p>• This AI cannot replace physical examination, medical history, or clinical judgment</p>
+                    <p>• Do not delay professional medical care based solely on this analysis</p>
+                `;
+                resultsDiv.appendChild(disclaimer);
+            } else {
+                const errorCard = document.createElement('div');
+                errorCard.className = 'error-card';
+                const provider = data.model_info ? (data.model_info.provider || 'Google AI Studio') : 'Google AI Studio';
+                let suggestionsHTML = '';
+                if (data.error && Array.isArray(data.error.suggestions) && data.error.suggestions.length > 0) {
+                    suggestionsHTML = `
+                        <div class="error-suggestions">
+                            <h4>💡 Troubleshooting Suggestions:</h4>
+                            <ul>${data.error.suggestions.map(s => `<li>${escapeHtml(s)}</li>`).join('')}</ul>
+                        </div>`;
+                }
+                const errorMsg = data.error && data.error.message ? data.error.message : 'Unknown error occurred.';
+                errorCard.innerHTML = `
+                    <div class="result-header">
+                        <div class="result-icon error-icon">❌</div>
+                        <div>
+                            <div class="result-title">Analysis Failed</div>
+                            <div class="result-subtitle">${escapeHtml(provider)}</div>
+                        </div>
+                    </div>
+                    <div class="result-content">
+                        <p><strong>Error:</strong> ${escapeHtml(errorMsg)}</p>
+                        ${suggestionsHTML}
+                    </div>
+                `;
+                resultsDiv.appendChild(errorCard);
+            }
+
+            resultsDiv.style.display = 'block';
+            resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function formatAnalysisText(text) {
+            if (!text) return '<p>No analysis content available.</p>';
+            let formatted = String(text).trim();
+
+            // Convert markdown-style headers (process h3 BEFORE h2 to avoid partial matches)
+            formatted = formatted.replace(/^###\s+(.*)$/gm, '<h3>$1</h3>');
+            formatted = formatted.replace(/^##\s+(.*)$/gm, '<h2>$1</h2>');
+
+            // Bold & italics
+            formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            formatted = formatted.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+
+            // Severity blocks
+            formatted = formatted.replace(/(EMERGENCY:.*?)(?=\n|$)/gi, '<div class="severity-emergency">🚨 $1</div>');
+            formatted = formatted.replace(/(URGENT:.*?)(?=\n|$)/gi, '<div class="severity-urgent">⚠️ $1</div>');
+            formatted = formatted.replace(/(ROUTINE:.*?)(?=\n|$)/gi, '<div class="severity-routine">✅ $1</div>');
+
+            // Bullets to <li>
+            formatted = formatted.replace(/^\-\s+(.*)$/gm, '<li>$1</li>');
+            // Wrap consecutive <li> blocks in a single <ul>
+            formatted = formatted.replace(/(?:<li>[\s\S]*?<\/li>\s*)+/g, (m) => `<ul>${m}</ul>`);
+
+            // Convert remaining double line breaks into paragraphs, but keep existing blocks
+            const parts = formatted.split(/\n\n+/);
+            let result = '';
+            for (let paragraph of parts) {
+                paragraph = paragraph.trim();
+                if (!paragraph) continue;
+                if (
+                    paragraph.startsWith('<h2') ||
+                    paragraph.startsWith('<h3') ||
+                    paragraph.startsWith('<div class="severity') ||
+                    paragraph.startsWith('<ul>') ||
+                    paragraph.startsWith('<ol>') ||
+                    paragraph.startsWith('<p>')
+                ) {
+                    result += paragraph + '\n';
+                } else {
+                    result += '<p>' + paragraph.replace(/\n/g, ' ') + '</p>\n';
+                }
+            }
+            return result || '<p>Analysis completed successfully.</p>';
+        }
+
+        function escapeHtml(str) {
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function showError(message) {
+            resultsDiv.innerHTML = `
+                <div class="error-card">
+                    <div style="text-align: center;">
+                        <div style="font-size: 3em; margin-bottom: 20px;">❌</div>
+                        <h3 style="color: #721c24; margin-bottom: 15px;">Analysis Error</h3>
+                        <p><strong>${escapeHtml(message)}</strong></p>
+                    </div>
+                </div>`;
+            welcomeMessage.style.display = 'none';
+            resultsDiv.style.display = 'block';
+            resultsDiv.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function clearResults() {
+            resultsDiv.style.display = 'none';
+            if (!selectedFile) welcomeMessage.style.display = 'block';
+        }
+
+        // Health check on page load
+        window.addEventListener('load', async () => {
+            try {
+                const response = await fetch('/health');
+                const health = await response.json();
+                const statusBadge = document.getElementById('statusBadge');
+                if (health.status === 'healthy') {
+                    statusBadge.innerHTML = '✅ Service Online • Google AI Studio Connected • Ready for Analysis';
+                    statusBadge.style.background = 'rgba(40, 167, 69, 0.2)';
+                } else {
+                    statusBadge.innerHTML = '⚠️ Setup Required • Check API Configuration';
+                    statusBadge.style.background = 'rgba(255, 193, 7, 0.2)';
+                    showError('Service setup required. Please check your Google AI Studio API key configuration.');
+                }
+            } catch (error) {
+                console.warn('Health check failed:', error);
+                document.getElementById('statusBadge').innerHTML = '⚠️ Connection Issue • Please Refresh';
+            }
+        });
+
+        // Add sample query suggestions
+        const sampleQueries = [
+            'What medical condition does this image show?',
+            'Please analyze this skin condition and provide recommendations.',
+            'What abnormalities can you identify in this medical image?',
+            'Is this condition serious? What should I do?',
+            'Analyze this X-ray for any concerning features.'
+        ];
+        queryText.addEventListener('focus', () => {
+            if (!queryText.value) {
+                const randomQuery = sampleQueries[Math.floor(Math.random() * sampleQueries.length)];
+                queryText.placeholder = `Try: "${randomQuery}" or describe your symptoms...`;
+            }
+        });
+    </script>
+</body>
+</html>
