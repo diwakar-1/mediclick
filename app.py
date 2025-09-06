@@ -8,6 +8,10 @@ from dotenv import load_dotenv
 import os
 import logging
 from datetime import datetime
+from app import app   # if your Flask app = Flask(__name__) inside app.py
+import os
+from flask import Flask
+
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -157,13 +161,14 @@ async def service_info():
         "response_time": "5-15 seconds",
     }
 
-if __name__ == "__main__":
-    import uvicorn
 
-    print("click on this to visit my website: http://localhost:8000")
-    if not GOOGLE_API_KEY:
-        print("API_KEY not found!")
-    else:
-        print("Medi AI Studio configured successfully!")
-    
-    uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")
+
+app = Flask(__name__)
+
+@app.route('/')
+def home():
+    return "Hello from Flask on Render!"
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
