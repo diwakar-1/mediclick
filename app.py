@@ -160,7 +160,8 @@ async def service_info():
 if __name__ == "__main__":
     import uvicorn
 
-    print("click on this to visit my website: http://localhost:8000")
+    print("\n🌐 Your MediClick app is running!\n")
+    print("👉 Open in browser: http://localhost:8000 🚑\n")
     if not GOOGLE_API_KEY:
         print("API_KEY not found!")
     else:
