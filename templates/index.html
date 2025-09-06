@@ -1,122 +1,195 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MedClick</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; line-height: 1.6; }
-        .container { max-width: 1400px; margin: 0 auto; background: white; border-radius: 25px; box-shadow: 0 25px 50px rgba(0,0,0,0.15); overflow: hidden; }
-        .header { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 40px; text-align: center; }
-        .header h1 { font-size: 3em; margin-bottom: 15px; font-weight: 700; }
-        .header p { font-size: 1.2em; opacity: 0.95; margin-bottom: 10px; }
-        .status-badge { display: inline-block; background: rgba(255,255,255,0.2); padding: 8px 20px; border-radius: 20px; font-size: 0.9em; margin-top: 10px; }
-        .main-content { display: grid; grid-template-columns: 1fr 1fr; gap: 0; min-height: 600px; }
-        .upload-section { padding: 50px; background: #f8f9fa; display: flex; flex-direction: column; justify-content: center; }
-        .results-section { padding: 50px; background: white; overflow-y: auto; max-height: 800px; }
-        .upload-area { border: 3px dashed #4facfe; border-radius: 20px; padding: 50px; margin-bottom: 30px; text-align: center; transition: all 0.3s ease; cursor: pointer; background: white; position: relative; }
-        .upload-area:hover { border-color: #00f2fe; background: rgba(79, 172, 254, 0.05); transform: translateY(-2px); }
-        .upload-area.dragover { border-color: #00f2fe; background: rgba(79, 172, 254, 0.1); transform: scale(1.02); }
-        .upload-icon { font-size: 5em; color: #4facfe; margin-bottom: 20px; }
-        .upload-text { color: #333; margin-bottom: 10px; }
-        .upload-text h3 { font-size: 1.5em; margin-bottom: 10px; }
-        .file-input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
-        .upload-btn { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; border: none; padding: 15px 35px; border-radius: 30px; font-size: 1.1em; font-weight: 600; cursor: pointer; transition: all 0.3s ease; margin-top: 20px; }
-        .upload-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(79, 172, 254, 0.3); }
-        .query-input { width: 100%; padding: 20px; border: 2px solid #e0e0e0; border-radius: 15px; font-size: 1.1em; margin-bottom: 25px; resize: vertical; min-height: 120px; font-family: inherit; background: white; }
-        .query-input:focus { outline: none; border-color: #4facfe; box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1); }
-        .analyze-btn { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 18px 45px; border-radius: 30px; font-size: 1.3em; font-weight: 600; cursor: pointer; transition: all 0.3s ease; width: 100%; }
-        .analyze-btn:hover:not(:disabled) { transform: translateY(-3px); box-shadow: 0 15px 35px rgba(102, 126, 234, 0.4); }
-        .analyze-btn:disabled { background: #ccc; cursor: not-allowed; transform: none; box-shadow: none; }
-        .preview-image { max-width: 100%; max-height: 300px; border-radius: 15px; margin: 25px 0; box-shadow: 0 10px 30px rgba(0,0,0,0.2); display: block; }
-        .loading { text-align: center; padding: 50px; display: none; }
-        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #4facfe; border-radius: 50%; width: 60px; height: 60px; animation: spin 1s linear infinite; margin: 0 auto 30px; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .loading h3 { color: #4facfe; font-size: 1.5em; margin-bottom: 15px; }
-        .loading p { color: #666; font-size: 1.1em; }
-        .result-card { background: #f8f9fa; border-radius: 20px; padding: 30px; margin-bottom: 25px; border-left: 5px solid #4facfe; }
-        .result-header { display: flex; align-items: center; margin-bottom: 25px; padding-bottom: 20px; border-bottom: 2px solid #e0e0e0; }
-        .result-icon { width: 60px; height: 60px; border-radius: 15px; display: flex; align-items: center; justify-content: center; margin-right: 20px; font-size: 2em; }
-        .success-icon { background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%); color: #155724; }
-        .error-icon { background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%); color: #721c24; }
-        .result-title { font-size: 1.6em; font-weight: 700; color: #2c3e50; margin-bottom: 5px; }
-        .result-subtitle { color: #666; font-size: 1em; }
-        .result-content { color: #333; font-size: 1.1em; line-height: 1.8; }
-        .result-content h2 { color: #2c3e50; font-size: 1.4em; margin: 30px 0 15px 0; padding-bottom: 10px; border-bottom: 2px solid #4facfe; font-weight: 600; }
-        .result-content h3 { color: #34495e; font-size: 1.2em; margin: 25px 0 10px 0; font-weight: 600; }
-        .result-content p { margin-bottom: 15px; }
-        .result-content ul, .result-content ol { margin: 15px 0; padding-left: 25px; }
-        .result-content li { margin-bottom: 8px; }
-        .result-content strong { color: #2c3e50; font-weight: 600; }
-        .medical-disclaimer { background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%); border: 3px solid #ffc107; border-radius: 20px; padding: 30px; margin: 30px 0; }
-        .medical-disclaimer h4 { color: #856404; font-size: 1.4em; margin-bottom: 20px; display: flex; align-items: center; font-weight: 700; }
-        .medical-disclaimer h4:before { content: "⚠️"; margin-right: 15px; font-size: 1.8em; }
-        .medical-disclaimer p { color: #856404; margin-bottom: 12px; font-weight: 500; font-size: 1em; }
-        .error-card { background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%); border: 3px solid #dc3545; border-radius: 20px; padding: 30px; color: #721c24; }
-        .error-suggestions { margin-top: 20px; }
-        .error-suggestions h4 { margin-bottom: 15px; font-weight: 600; }
-        .error-suggestions ul { padding-left: 20px; }
-        .error-suggestions li { margin-bottom: 8px; }
-        .info-badges { display: flex; gap: 15px; margin-top: 20px; flex-wrap: wrap; }
-        .badge { background: rgba(79, 172, 254, 0.1); color: #4facfe; padding: 8px 16px; border-radius: 20px; font-size: 0.9em; font-weight: 500; }
-        @media (max-width: 1024px) { .main-content { grid-template-columns: 1fr; } .results-section { max-height: none; } }
-        @media (max-width: 768px) { .container { margin: 10px; border-radius: 20px; } .header h1 { font-size: 2.2em; } .upload-section, .results-section { padding: 30px 20px; } .result-header { flex-direction: column; text-align: center; } .result-icon { margin: 0 0 15px 0; } }
-        .formatted-text h2::before { content: "📋"; margin-right: 10px; }
-        .formatted-text h3::before { content: "•"; color: #4facfe; margin-right: 8px; font-weight: bold; }
-        .severity-emergency { background: #f8d7da; border-left: 4px solid #dc3545; padding: 15px; border-radius: 8px; margin: 15px 0; }
-        .severity-urgent { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; border-radius: 8px; margin: 15px 0; }
-        .severity-routine { background: #d4edda; border-left: 4px solid #28a745; padding: 15px; border-radius: 8px; margin: 15px 0; }
-        /* helper for file details */
-        #fileDetails { color: #555; font-size: 0.95em; margin-top: 8px; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MediClick</title>
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Roboto:wght@400;500&family=Raleway:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Roboto', sans-serif; }
+    h1, h2, h3, button, .font-poppins { font-family: 'Raleway', sans-serif; }
+    .fade-in { animation: fadeIn 0.8s ease-in-out; }
+    .slide-up { animation: slideUp 0.8s ease-in-out; }
+    .ripple {
+      position: relative;
+      overflow: hidden;
+    }
+    .ripple:after {
+      content: "";
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+      background: radial-gradient(circle, rgba(255,255,255,0.5) 10%, transparent 10.01%);
+      background-repeat: no-repeat;
+      background-position: 50%;
+      transform: scale(10,10);
+      opacity: 0;
+      transition: transform .5s, opacity 1s;
+    }
+    .ripple:active:after {
+      transform: scale(0,0);
+      opacity: .3;
+      transition: 0s;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes slideUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    html { scroll-behavior: smooth; }
+  </style>
 </head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>🏥 MediClick</h1>
-            <p>Advanced AI-Powered Medical Image Analysis</p>
-        </div>
-        <div class="main-content">
-            <div class="upload-section">
-                <form id="analysisForm" enctype="multipart/form-data">
-                    <div class="upload-area" id="uploadArea">
-                        <div class="upload-icon" id="uploadIcon">📷</div>
-                        <div class="upload-text">
-                            <h3 id="uploadHeading">Upload Medical Image</h3>
-                            <p>Drag & drop your medical image here or click to browse</p>
-                            <p style="color: #888; font-size: 0.9em; margin-top: 10px;">Supported: JPG, PNG, GIF • Max: 10MB</p>
-                            <p id="fileDetails" aria-live="polite"></p>
-                            <button type="button" class="upload-btn" id="chooseBtn">📎 Choose Image</button>
-                        </div>
-                        <!-- IMPORTANT: keep input in DOM; don't replace/remove it -->
-                        <input type="file" id="imageFile" name="image" class="file-input" accept="image/*" aria-label="Choose medical image">
-                    </div>
-                    <img id="previewImage" class="preview-image" style="display: none;" alt="Selected image preview">
-                    <textarea id="queryText" name="query" class="query-input" placeholder="Describe your symptoms or ask about the medical condition. For example: 'What skin condition is this?', 'Please analyze this X-ray', or 'What medical problems do you see in this image?'" required></textarea>
-                    <button type="submit" class="analyze-btn" id="analyzeBtn">🔬 Analyze Medical Image</button>
-                </form>
+<body class="bg-gradient-to-br from-blue-50 via-indigo-100 to-purple-100 min-h-screen p-4">
+
+  <!-- Container -->
+  <div class="max-w-6xl mx-auto bg-white/80 backdrop-blur-lg rounded-2xl shadow-2xl overflow-hidden border border-gray-200 fade-in">
+
+    <!-- Header / Hero Section -->
+    <header class="relative bg-gradient-to-r from-indigo-600 via-blue-500 to-teal-500 text-white p-10 shadow-xl overflow-hidden">
+      <!-- Abstract background pattern -->
+      <div class="absolute inset-0 opacity-10 bg-[url('https://www.toptal.com/designers/subtlepatterns/patterns/double-bubble-outline.png')] bg-repeat"></div>
+      
+      <div class="relative z-10 grid md:grid-cols-2 gap-8 items-center">
+        <!-- Logo + Text -->
+        <div class="text-center md:text-left">
+          <div class="flex justify-center md:justify-start mb-4">
+            <div class="w-16 h-16 bg-gradient-to-r from-purple-400 to-indigo-600 rounded-full flex items-center justify-center shadow-lg">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-8 h-8">
+                <path fill-rule="evenodd" d="M1 5.25A2.25 2.25 0 0 1 3.25 3h13.5A2.25 2.25 0 0 1 19 5.25v9.5A2.25 2.25 0 0 1 16.75 17H3.25A2.25 2.25 0 0 1 1 14.75v-9.5Zm1.5 5.81v3.69c0 .414.336.75.75.75h13.5a.75.75 0 0 0 .75-.75v-2.69l-2.22-2.219a.75.75 0 0 0-1.06 0l-1.91 1.909.47.47a.75.75 0 1 1-1.06 1.06L6.53 8.091a.75.75 0 0 0-1.06 0l-2.97 2.97ZM12 7a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z" clip-rule="evenodd" />
+              </svg>
             </div>
-            <div class="results-section" id="resultsSection">
-                <div class="loading" id="loadingDiv">
-                    <div class="spinner"></div>
-                    <h3> AI Analysis in Progress...</h3>
-                    <p>Medi AI is carefully analyzing your medical image with advanced diagnostic algorithms.</p>
-                </div>
-                <div id="resultsDiv" style="display: none;"></div>
-                <div id="welcomeMessage">
-                    <div style="text-align: center; padding: 50px 20px; color: #666;">
-                        <div style="font-size: 4em; margin-bottom: 20px;">🩺</div>
-                        <h2 style="color: #4facfe; margin-bottom: 15px;">Welcome to MediClick Image Analysis</h2>
-                        <p style="font-size: 1.1em; line-height: 1.6;">Upload a medical image and describe your symptoms to get an AI-powered analysis. Our system provides comprehensive medical assessments including visual observations, potential diagnoses, severity evaluation, and professional recommendations.</p>
-                        <div class="info-badges" style="justify-content: center; margin-top: 25px;">
-                            <div class="badge">Accurate Analysis</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+          </div>
+          <h1 class="text-4xl md:text-5xl font-bold mb-3 font-poppins bg-clip-text text-transparent bg-gradient-to-r from-teal-200 via-blue-300 to-purple-300 tracking-wide">
+            MediClick
+          </h1>
+          <p class="text-lg opacity-90 font-light mb-6">Advanced AI-Powered Medical Image Analysis</p>
+
+          <!-- Hero Statement + CTA -->
+          <p class="text-base md:text-lg text-white/90 mb-6">Start your journey towards faster, AI-powered diagnosis today.</p>
+          <a href="#analysisForm" class="inline-block px-6 py-3 rounded-full bg-gradient-to-r from-teal-400 via-blue-500 to-indigo-600 text-white font-poppins font-semibold shadow-lg hover:shadow-2xl transform hover:scale-105 transition ripple">Get Started</a>
         </div>
-    </div>
+
+        <!-- Illustration -->
+        <div class="hidden md:flex justify-center">
+          <img src="https://cdn-icons-png.flaticon.com/512/2966/2966486.png" alt="Medical Illustration" class="w-64 h-64 object-contain drop-shadow-lg">
+        </div>
+      </div>
+    </header>
+
+    <!-- Main content -->
+    <main class="grid md:grid-cols-2">
+      
+      <!-- Upload Section -->
+      <section class="p-8 bg-gradient-to-br from-white/70 to-gray-50/70 backdrop-blur-sm flex flex-col justify-center">
+        <form id="analysisForm" enctype="multipart/form-data" class="space-y-6">
+          
+          <!-- Upload Box -->
+          <div id="uploadArea" class="border-2 border-dashed border-indigo-400 rounded-xl p-8 text-center bg-white/70 hover:bg-indigo-50/70 transition cursor-pointer relative">
+            <div id="uploadIcon" class="flex justify-center mb-4">
+              <div class="w-14 h-14 bg-gradient-to-r from-blue-400 to-indigo-500 rounded-full flex items-center justify-center shadow-md">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="white" class="w-7 h-7">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 10.5L12 6l-4.5 4.5M12 6v12" />
+                </svg>
+              </div>
+            </div>
+            <h3 id="uploadHeading" class="text-xl font-poppins font-semibold mb-2 text-gray-700">Upload Medical Image</h3>
+            <p class="text-gray-500 text-sm">Drag & drop or click to browse</p>
+            <p class="text-gray-400 text-xs mt-2">Supported: JPG, PNG, GIF • Max: 10MB</p>
+            <p id="fileDetails" class="text-gray-600 text-sm mt-2"></p>
+            <button type="button" id="chooseBtn" class="mt-4 px-6 py-3 rounded-full bg-gradient-to-r from-indigo-500 via-blue-500 to-teal-500 text-white font-poppins font-semibold shadow-lg hover:shadow-2xl transform hover:scale-105 transition ripple">Choose Image</button>
+            <input type="file" id="imageFile" name="image" class="absolute inset-0 opacity-0 cursor-pointer" accept="image/*">
+          </div>
+
+          <!-- Preview -->
+          <img id="previewImage" class="hidden max-h-64 mx-auto rounded-lg shadow-lg border border-gray-200" alt="Preview">
+
+          <!-- Query Input -->
+          <textarea id="queryText" name="query" class="w-full p-4 border rounded-lg focus:ring-2 focus:ring-indigo-400 focus:outline-none resize-none h-32 font-roboto text-gray-700" placeholder="Describe your symptoms or ask about the medical condition..." required></textarea>
+
+          <!-- Analyze Button -->
+          <button id="analyzeBtn" type="submit" class="w-full py-3 rounded-full bg-gradient-to-r from-teal-600 via-blue-600 to-indigo-600 text-white text-lg font-poppins font-bold shadow-lg hover:shadow-2xl transform hover:scale-105 transition ripple tracking-wide">Analyze Medical Image</button>
+        </form>
+      </section>
+
+      <!-- Results Section -->
+      <section id="resultsSection" class="p-8 bg-white/80 backdrop-blur-md overflow-y-auto max-h-[800px]">
+        
+        <!-- Loading -->
+        <div id="loadingDiv" class="hidden text-center py-16">
+          <div class="w-14 h-14 border-4 border-gray-200 border-t-indigo-500 rounded-full animate-spin mx-auto mb-6"></div>
+          <h3 class="text-xl font-poppins text-indigo-600 mb-2 flex items-center justify-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 animate-pulse">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 2.25c5.385 0 9.75 4.365 9.75 9.75S17.385 21.75 12 21.75 2.25 17.385 2.25 12 6.615 2.25 12 2.25z" />
+            </svg>
+            AI Analysis in Progress...
+          </h3>
+          <p class="text-gray-600">Medi AI is carefully analyzing your medical image.</p>
+        </div>
+
+        <!-- Results -->
+        <div id="resultsDiv" class="hidden space-y-6">
+          <!-- Success card example -->
+          <div class="success-card hidden bg-green-50 border border-green-200 rounded-xl p-6 shadow-md fade-in slide-up">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center animate-bounce">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="white" class="w-6 h-6">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                </svg>
+              </div>
+              <h3 class="text-lg font-poppins font-semibold text-green-700">Analysis Successful</h3>
+            </div>
+            <div class="text-gray-700 text-sm leading-relaxed">Your medical image has been analyzed successfully. Results will display here.</div>
+          </div>
+
+          <!-- Error card example -->
+          <div class="error-card hidden bg-red-50 border border-red-200 rounded-xl p-6 shadow-md fade-in slide-up">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center animate-bounce">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="white" class="w-6 h-6">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2.25m0 3h.008v.008H12V14.25zM21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z" />
+                </svg>
+              </div>
+              <h3 class="text-lg font-poppins font-semibold text-red-700">Analysis Failed</h3>
+            </div>
+            <div class="text-gray-700 text-sm leading-relaxed">Something went wrong during the analysis. Please try again.</div>
+          </div>
+        </div>
+
+        <!-- Welcome Message -->
+        <div id="welcomeMessage" class="text-center py-16 text-gray-600 fade-in">
+          <div class="flex justify-center mb-4">
+            <div class="w-14 h-14 bg-gradient-to-r from-indigo-400 to-blue-600 rounded-full flex items-center justify-center shadow-md animate-pulse">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="white" class="w-7 h-7">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5M12 2.25c5.385 0 9.75 4.365 9.75 9.75S17.385 21.75 12 21.75 2.25 17.385 2.25 12 6.615 2.25 12 2.25z" />
+              </svg>
+            </div>
+          </div>
+          <h2 class="text-2xl font-poppins bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 via-blue-500 to-teal-500 mb-4 tracking-wide">Welcome to MediClick</h2>
+          <p class="max-w-lg mx-auto text-base leading-relaxed">Upload a medical image and describe your symptoms to get an AI-powered analysis. Our system provides detailed observations, potential diagnoses, severity evaluation, and professional recommendations.</p>
+          <div class="flex justify-center mt-6">
+            <span class="px-4 py-1 rounded-full bg-indigo-50 text-indigo-600 text-sm font-poppins font-semibold">Accurate Analysis</span>
+          </div>
+        </div>
+
+      </section>
+    </main>
+  </div>
+
+  <!-- Your JS -->
+  <script src="script.js"></script>
+</body>
 
     <script>
         let selectedFile = null;

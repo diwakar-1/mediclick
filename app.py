@@ -160,13 +160,10 @@ async def service_info():
 if __name__ == "__main__":
     import uvicorn
 
-    print("http://localhost:8000")
+    print("click on this to visit my website: http://localhost:8000")
     if not GOOGLE_API_KEY:
         print("API_KEY not found!")
     else:
         print("Medi AI Studio configured successfully!")
-        print()
-    print("Starting server...")
-    print("=" * 60)
     
     uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")
