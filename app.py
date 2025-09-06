@@ -8,7 +8,6 @@ from dotenv import load_dotenv
 import os
 import logging
 from datetime import datetime
-from app import app   # if your Flask app = Flask(__name__) inside app.py
 import os
 from flask import Flask
 
