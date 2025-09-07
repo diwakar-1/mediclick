@@ -1,0 +1,7 @@
+#IMPORTANT STEP TO RUN MEDICLICK WEBSITE..........
+1. Open app.py file
+2. In terminal run this command before running python file
+pip install -r requirements.txt
+(This will download important libary for this file)
+3. Then there will this msg will popup (👉 Open in browser: http://localhost:8000 🚑)
+
